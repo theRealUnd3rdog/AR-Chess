@@ -71,7 +71,7 @@ public class PieceManager : MonoBehaviour
                     SetTeam(piece);
                 }
                 // Spawn the pawns after
-                else
+                /* else
                 {
                     // Get the tile
                     pieceToSpawn = pieces[pieces.Length - 1];
@@ -81,7 +81,7 @@ public class PieceManager : MonoBehaviour
                     piece.transform.SetParent(tile.transform);
                     piece.currentTile = tile;
                     SetTeam(piece);
-                }
+                } */
             }
         }
     }
@@ -101,4 +101,49 @@ public class PieceManager : MonoBehaviour
                 break;
         }
     }
+
+    public List<Tile> GetAllValidMovesTeam(PieceTeam team)
+    {
+        List<Tile> moves = new List<Tile>();
+
+        switch (team)
+        {
+            case PieceTeam.White:
+                moves.AddRange(GetAllPiecesValidMoves(whiteTeam));
+                break;
+
+            case PieceTeam.Black:
+                moves.AddRange(GetAllPiecesValidMoves(blackTeam));
+                break;
+        }
+
+        return moves;
+    }
+
+    private List<Tile> GetAllPiecesValidMoves(List<Piece> pieces)
+    {
+        List<Tile> allMoves = new List<Tile>();
+
+        foreach (Piece piece in pieces)
+        {
+            if (piece is not King)
+                allMoves.AddRange(piece.GetValidMoves());
+        }
+
+        return allMoves;
+    }
+
+    public static void KillPiece(Piece piece)
+    {
+        if (Instance.whiteTeam.Contains(piece))
+            Instance.whiteTeam.Remove(piece);
+
+        else if (Instance.blackTeam.Contains(piece))
+            Instance.blackTeam.Remove(piece);
+
+        Destroy(piece.gameObject);
+
+        Debug.Log($"Killed {piece.name}");
+    }
+
 }

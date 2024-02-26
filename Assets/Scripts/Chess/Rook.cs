@@ -5,37 +5,57 @@ using UnityEngine;
 
 public class Rook : Piece
 {
+    protected override void Start()
+    {
+        base.Start();
+    }
+
+    protected override void OnDestroy()
+    {
+        base.OnDestroy();
+    }
+
     public override List<Tile> GetValidMoves()
     {
-        List<Tile> validMoves = new List<Tile>();
-
-        // Get current tile coordinates
-        int currentIndex = Array.IndexOf(TileManager.Instance.tiles, currentTile);
-        int currentX = currentIndex % 8; // Column index
-        int currentY = currentIndex / 8; // Row index
-
-        // Check all tiles in the same row (horizontal)
-        for (int x = 0; x < 8; x++)
+        List<Tile> validMoves = GetUniDirectionalTiles();
+        
+        foreach (Tile tile in validMoves)
         {
-            if (x != currentX)
+            //Debug.Log("Valid Moves: " + tile.name);
+
+            List<Tile> uniTiles = GetUniDirectionalTiles(true, 1, tile);
+            List<Tile> diagonalTiles = GetDiagonalTiles(true, 1, tile);
+
+            string uniName = "";
+            string diagName = "";
+
+            foreach (Tile uni in uniTiles)
             {
-                Tile tileToAdd = TileManager.Instance.tiles[currentY * 8 + x];
+                if (uni.tilePiece != null)
+                {
+                    if (uni.tilePiece is King)
+                    {
+                        Debug.Log($"King at {uni.name}, cannot move to {tile.name}");
+                    }
+                }
 
-                if (!tileToAdd.IsTileTaken())
-                    validMoves.Add(tileToAdd);
+                uniName += " " + uni.name;
             }
-        }
 
-        // Check all tiles in the same column (vertical)
-        for (int y = 0; y < 8; y++)
-        {
-            if (y != currentY)
+            foreach (Tile diag in diagonalTiles)
             {
-                Tile tileToAdd = TileManager.Instance.tiles[y * 8 + currentX];
+                if (diag.tilePiece != null)
+                {
+                    if (diag.tilePiece is King)
+                    {
+                        Debug.Log($"King at {diag.name}, cannot move to {tile.name}");
+                    }
+                }
 
-                if (!tileToAdd.IsTileTaken())
-                    validMoves.Add(tileToAdd);
+                diagName += " " + diag.name;
             }
+
+            Debug.Log($"{tile.name}: {uniName} + {diagName}");
         }
 
         return validMoves;
@@ -43,6 +63,13 @@ public class Rook : Piece
 
     public override List<Tile> GetInvalidMoves()
     {
-        throw new NotImplementedException();
+        List<Tile> invalidMoves = GetUniDirectionalTiles(false);
+
+        foreach (Tile tile in invalidMoves)
+        {
+            Debug.Log("Invalid Moves: " + tile.name);
+        }
+
+        return invalidMoves;
     }
 }

@@ -6,10 +6,10 @@ using UnityEngine.Events;
 public class TileChildEventHandler : MonoBehaviour
 {
     // Event invoked when a child is added to the tile
-    public UnityEvent onChildAdded;
+    [HideInInspector] public UnityEvent onChildAdded;
 
     // Event invoked when a child is removed from the tile
-    public UnityEvent onChildRemoved;
+    [HideInInspector] public UnityEvent onChildRemoved;
 
     private void Start()
     {
