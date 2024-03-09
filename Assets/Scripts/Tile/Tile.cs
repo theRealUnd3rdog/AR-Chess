@@ -1,12 +1,28 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class Tile : MonoBehaviour
 {
     public Piece tilePiece {private set; get;}
+    private bool _skippable;
+    public bool Skippable
+    {
+        get {return _skippable;}
+        set
+        {
+            if (_skippable != value)
+            {
+                _skippable = value;
+                OnSkipChanged(_skippable);
+            }
+        }
+    }
+
+    // Event that runs whenever the tile skippable value changes
+    public event System.Action<bool> SkipChange;
+
     private Material _highlightMaterial;
     private Material _invalidMaterial;
     private Material _killMaterial;
@@ -15,12 +31,24 @@ public class Tile : MonoBehaviour
 
     private TileChildEventHandler _childEventHandler;
 
+    private void OnSkipChanged(bool newSkipState)
+    {
+        SkipChange?.Invoke(newSkipState);
+    }
+
+    public virtual void OnSkipStateChanged(bool newSkipState)
+    {
+
+    }
+
     private void Awake()
     {
         _childEventHandler = GetComponent<TileChildEventHandler>();
 
         _childEventHandler.onChildAdded.AddListener(StorePiece);
         _childEventHandler.onChildRemoved.AddListener(RemovePiece);
+
+        SkipChange += OnSkipStateChanged;
     }
 
     private void Start()
@@ -37,6 +65,8 @@ public class Tile : MonoBehaviour
     {
         _childEventHandler.onChildAdded.RemoveListener(StorePiece);
         _childEventHandler.onChildRemoved.RemoveListener(RemovePiece);
+
+        SkipChange -= OnSkipStateChanged;
     }
 
     /* private void OnMouseEnter()
@@ -52,17 +82,40 @@ public class Tile : MonoBehaviour
         // Check the previous current selected piece
         Piece currentPiece = TileManager.Instance.currentPieceSelected;
 
-        if (tilePiece != null && GameManager.Instance.CurrentTeam == tilePiece.Team)
-            DisplayMoves(this.tilePiece);
+        // Check if a tile has a piece and check if they are of current team
+        if (tilePiece != null)
+        {
+            if (GameManager.Instance.CurrentTeam == tilePiece.Team)
+            {
+                // Previous tile selected should no longer be skippable
+                if (TileManager.Instance.currentTileSelected != null)
+                    TileManager.Instance.currentTileSelected.Skippable = false;
+
+                Skippable = true;
+
+                tilePiece.CheckKingOnSelection(); 
+                
+                // Select the current piece
+                currentPiece = tilePiece;
+                TileManager.Instance.currentPieceSelected = tilePiece;
+                // Select the current tile
+                TileManager.Instance.currentTileSelected = this;
+
+                TileManager.Instance.tilesToMove = tilePiece.GetPseudoValidMoves();
+
+                DisplayMoves(tilePiece, TileManager.Instance.tilesToMove);
+            }
+        }
 
         if (currentPiece != null)
         {
             // Grab the current set of valid tiles to move to
             List<Tile> tilesToMove = new List<Tile>();
+            List<Tile> pseudoValidMoves = TileManager.Instance.tilesToMove;
 
             try
             {
-                tilesToMove = currentPiece.GetValidMoves();
+                tilesToMove = pseudoValidMoves;
             }
             catch (System.NotImplementedException e)
             {
@@ -80,18 +133,15 @@ public class Tile : MonoBehaviour
                         PieceManager.KillPiece(tilePiece);
                     }
                 }
-
-                DisplayMoves(currentPiece);
+                    
                 currentPiece.MoveToTile(this);
+                return;
             }
         }
     }
 
-    private void DisplayMoves(Piece piece)
+    private void DisplayMoves(Piece piece, List<Tile> moves)
     {
-        TileManager.Instance.currentTileSelected = this;
-        TileManager.Instance.currentPieceSelected = piece;
-
         TileManager.Instance.UnhighlightAllTiles();
 
         _rend.material = _highlightMaterial;
@@ -101,7 +151,7 @@ public class Tile : MonoBehaviour
 
         try
         {
-            tilesToMove = piece.GetValidMoves();
+            tilesToMove = moves;
         }
         catch (System.NotImplementedException e)
         {
@@ -156,11 +206,17 @@ public class Tile : MonoBehaviour
 
     public bool IsTileTaken()
     {
-        return tilePiece != null;
+        if (!Skippable)
+            return tilePiece != null;
+        else
+        {
+            return false;
+        }
+            
     }
 
-    private void StorePiece() => tilePiece = this.transform.GetComponentInChildren<Piece>();
-    private void RemovePiece() => tilePiece = null;
+    public void StorePiece() => tilePiece = this.transform.GetComponentInChildren<Piece>();
+    public void RemovePiece() => tilePiece = null;
 
     public void Highlight(Material material) => _rend.material = material;
     public void Unhighlight() => _rend.material = _originalMaterial;

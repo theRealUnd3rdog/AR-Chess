@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public enum PieceType
@@ -20,15 +19,31 @@ public enum PieceTeam
     Black,
 }
 
+public struct LegalPieceMoves
+{
+    public Piece piece;
+    public List<Tile> moves;
+
+    // Constructor to initialize the moves list
+    public LegalPieceMoves(Piece piece)
+    {
+        this.piece = piece;
+        this.moves = new List<Tile>(); // Initialize the moves list
+    }
+}
+
 public abstract class Piece : MonoBehaviour
 {
     public PieceType Type;
     public PieceTeam Team;
     public Tile currentTile;
     public int currentMove = 0;
+    public bool isCheckingKing = false;
+    //public bool isThreatToKing = false;
 
     // In the Piece class
     public abstract List<Tile> GetValidMoves();
+    public abstract List<Tile> GetPseudoValidMoves();
     public abstract List<Tile> GetInvalidMoves();
 
     protected virtual void Start()
@@ -50,7 +65,60 @@ public abstract class Piece : MonoBehaviour
         GameManager.Instance.CurrentTeam = (team == PieceTeam.White) ? PieceTeam.Black : PieceTeam.White;
         TileManager.DeselectPiece();
 
+        CheckKing(team);
         //Debug.Log("Team changed");
+    }
+
+    public void CheckKingOnSelection()
+    {
+        PieceTeam oppositeTeam = Team == PieceTeam.White ? PieceTeam.Black : PieceTeam.White;
+
+        GameManager.SetThreatenPieces(Team, PieceManager.Instance.GetPiecesThreatningKing(oppositeTeam));
+    }
+
+    /* public void ThreatKing()
+    {
+        foreach (Tile tile in GetValidMoves())
+        {
+            //Debug.Log("Valid Moves: " + tile.name);
+
+            if (tile.IsTileTaken() && tile.tilePiece is King)
+            {
+                if (tile.tilePiece.Team != this.Team)
+                {
+                    isThreatToKing = true;
+                    break;
+                }
+            }
+            else
+            {
+                isThreatToKing = false;
+            }
+        }
+    } */
+
+    /// <summary>
+    /// This method changes the isCheckingKing bool depending on whether it is on the king or not
+    /// </summary>
+    public void CheckKing(PieceTeam team)
+    {
+        foreach (Tile tile in GetValidMoves())
+        {
+            //Debug.Log("Valid Moves: " + tile.name);
+
+            if (tile.IsTileTaken() && tile.tilePiece is King)
+            {
+                if (tile.tilePiece.Team != this.Team)
+                {
+                    isCheckingKing = true;
+                    break;
+                }
+            }
+            else
+            {
+                isCheckingKing = false;
+            }
+        }
     }
 
     public virtual void MoveToTile(Tile tile)
@@ -59,6 +127,7 @@ public abstract class Piece : MonoBehaviour
         this.transform.position = tile.transform.position;
         this.transform.SetParent(tile.transform);
         this.currentTile = tile;
+        this.currentTile.Skippable = false;
 
         currentMove++;
 
@@ -339,7 +408,7 @@ public abstract class Piece : MonoBehaviour
                     uniTiles.Add(forwardTile);
                     break;
                 }
-                
+
                 break;
             }
 
@@ -526,6 +595,110 @@ public abstract class Piece : MonoBehaviour
         }
 
         return diagonalTiles;
+    }
+
+    public virtual List<Tile> CalculatePseudoValidMoves(List<Tile> pseudoValidMoves)
+    {
+        Tile kingTile = PieceManager.Instance.GetPieceCurrentTile<King>(Team);
+
+        List<Piece> threatningPieces = GameManager.GetThreatPieces(Team);
+
+        List<LegalPieceMoves> legalPieceMoves = new List<LegalPieceMoves>(); 
+
+        // If there are any threatning pieces king is in threat
+        if (threatningPieces.Count > 0)
+        {
+            List<Tile> legalMoves = new List<Tile>();
+
+            foreach (Piece piece in threatningPieces)
+            {
+                LegalPieceMoves pieceMoves = new LegalPieceMoves(piece);
+
+                List<Tile> oppositePieceMoves = piece.GetValidMoves();
+                int kingIndex = oppositePieceMoves.IndexOf(kingTile);
+
+                legalMoves.Add(piece.currentTile);
+
+                pieceMoves.piece = piece;
+                pieceMoves.moves.Add(piece.currentTile);
+
+                if (kingIndex != -1)
+                {
+                    for (int i = kingIndex; i >= 0; i--)
+                    {
+                        legalMoves.Add(oppositePieceMoves[i]);
+                        pieceMoves.moves.Add(oppositePieceMoves[i]);
+
+                        if (piece.IsTileNear(oppositePieceMoves[i]))
+                        {
+                            break;
+                        }   
+                            
+                    }
+                }
+
+                legalPieceMoves.Add(pieceMoves);
+            }
+
+            bool blocksAllPaths = true;
+
+            // Go through each piece and their legal moves and see if all pieces can be blocked against
+            for (int i = 0; i < legalPieceMoves.Count; i++)
+            {
+                var commonMoves = pseudoValidMoves.Intersect(legalPieceMoves[i].moves).ToList();
+
+                if (legalPieceMoves.Count > 1 && legalPieceMoves[i].piece.isCheckingKing)
+                {
+                    blocksAllPaths = false;
+                    break;
+                }
+
+                if (commonMoves.Any())
+                    continue;
+                else
+                {
+                    blocksAllPaths = false;
+                    break;
+                }
+            }
+
+            if (blocksAllPaths)
+            {
+                // Check if any element from pseudoValidMoves is contained in validMoves
+                var commonMoves = pseudoValidMoves.Intersect(legalMoves).ToList();
+
+                // If any common moves found, clear validMoves and add only common moves
+                if (commonMoves.Any())
+                {
+                    pseudoValidMoves.Clear();
+                    pseudoValidMoves.AddRange(commonMoves);
+
+                    return pseudoValidMoves;
+                }
+            }
+            else
+            {
+                pseudoValidMoves.Clear();
+            }
+        }
+
+        return pseudoValidMoves;
+    }
+
+    public virtual bool IsTileNear(Tile tileToCheck)
+    {
+        List<Tile> moves = new List<Tile>();
+
+        List<Tile> uniTiles = GetUniDirectionalTiles(true, 1);
+        List<Tile> diagonalTiles = GetDiagonalTiles(true, 1);
+
+        moves.AddRange(uniTiles);
+        moves.AddRange(diagonalTiles);
+
+        if (moves.Contains(tileToCheck))
+            return true;
+        else
+            return false;
     }
 
     public virtual bool IsNotSameTeam(Piece piece)

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class PieceManager : MonoBehaviour
@@ -25,6 +26,13 @@ public class PieceManager : MonoBehaviour
 
         InstantiatePieces(_whitePieces);
         InstantiatePieces(_blackPieces);
+
+        GameManager.MoveMade += PerformCheckMate;
+    }
+
+    private void OnDestroy()
+    {
+        GameManager.MoveMade -= PerformCheckMate;
     }
 
     private void InstantiatePieces(PieceSO pieceSO)
@@ -69,6 +77,31 @@ public class PieceManager : MonoBehaviour
                     piece.transform.SetParent(tile.transform);
                     piece.currentTile = tile;
                     SetTeam(piece);
+
+                    // Handle rook side for castling later
+                    Rook rook = piece.GetComponent<Rook>();
+
+                    if (rook != null)
+                    {
+                        switch (tile.name)
+                        {
+                            case "A1":
+                                rook.Side = RookSide.Left;
+                                break;
+
+                            case "H1":
+                                rook.Side = RookSide.Right;
+                                break;
+
+                            case "H8":
+                                rook.Side = RookSide.Left;
+                                break;
+
+                            case "A8":
+                                rook.Side = RookSide.Right;
+                                break;
+                        }
+                    }
                 }
                 // Spawn the pawns after
                 /* else
@@ -101,6 +134,193 @@ public class PieceManager : MonoBehaviour
                 break;
         }
     }
+
+    public void CheckTeam(PieceTeam team)
+    {
+        PieceTeam oppositeTeam = PieceTeam.White;
+
+        if (team is PieceTeam.White)
+            oppositeTeam = PieceTeam.Black;
+
+        List<Piece> pieces = GetPiecesThatAreCheckingKing(oppositeTeam);
+
+        // If the list is empty
+        if (pieces.Count <= 0)
+        {
+            GameManager.CheckTeam(team, false);
+            return;
+        }
+
+        GameManager.CheckTeam(team, true);
+    }
+
+    public void PerformCheckMate(PieceTeam team)
+    {
+        //bool check = GameManager.GetCheckedTeam(out PieceTeam team);
+
+        PieceTeam oppositeTeam = team == PieceTeam.White ? PieceTeam.Black : PieceTeam.White;
+
+        List<Tile> tiles = GetAllPseudoValidMovesTeam(oppositeTeam);
+
+        Debug.LogWarning("Number of valid tiles: " + tiles.Count);
+
+        if (tiles.Count <= 0)
+        {
+            GameManager.CheckMateTeam(oppositeTeam);
+            
+            Debug.Log($"{team} has won");
+        }
+    }
+
+    public Tile GetCurrentRookTile(PieceTeam team, RookSide side)
+    {
+        Tile tile = default;
+
+        
+
+        return tile;
+    }
+
+    public Tile GetPieceCurrentTile<T>(PieceTeam team)
+    {
+        Tile tile = default;
+
+        switch (team)
+        {
+            case PieceTeam.White:
+                foreach (Piece piece in whiteTeam)
+                {
+                    if (piece is T)
+                        tile = piece.currentTile;
+                }
+
+                break;
+
+            case PieceTeam.Black:
+                foreach (Piece piece in blackTeam)
+                {
+                    if (piece is T)
+                        tile = piece.currentTile;
+                }
+
+                break;
+        }
+
+        return tile;
+    }
+
+    public List<Piece> GetPiecesThreatningKing(PieceTeam team)
+    {
+        List<Piece> threatPieces = new List<Piece>();
+
+        switch (team)
+        {
+            case PieceTeam.White:
+                threatPieces.AddRange(GetPiecesThatAreThreatningKing(whiteTeam));
+                break;
+
+            case PieceTeam.Black:
+                threatPieces.AddRange(GetPiecesThatAreThreatningKing(blackTeam));
+                break;
+        }
+
+        /* foreach (Piece threats in threatPieces)
+        {
+            Debug.Log($"Threat pieces are {threats.name}");
+        }
+        */
+        return threatPieces;
+    }
+
+    private List<Piece> GetPiecesThatAreThreatningKing(List<Piece> pieces)
+    {
+        List<Piece> threatPieces = new List<Piece>();
+
+        foreach (Piece piece in pieces)
+        {
+            foreach (Tile tile in piece.GetValidMoves())
+            {
+                if (tile.tilePiece is King)
+                {
+                    threatPieces.Add(piece);
+                    continue;
+                }
+            }
+        }
+
+        return threatPieces;
+    }
+
+    public List<Piece> GetPiecesThatAreCheckingKing(PieceTeam team)
+    {
+        List<Piece> pieces = new List<Piece>();
+
+        switch (team)
+        {
+            case PieceTeam.White:
+                foreach (Piece piece in whiteTeam)
+                {
+                    if (piece.isCheckingKing)
+                        pieces.Add(piece);
+                }
+
+                break;
+
+            case PieceTeam.Black:
+                foreach (Piece piece in blackTeam)
+                {
+                    if (piece.isCheckingKing)
+                        pieces.Add(piece);
+                }
+                break;
+        }
+
+        return pieces;
+    }
+
+    /* public List<Tile> GetPathThatChecksKing(PieceTeam team)
+    {
+        List<Tile> paths = new List<Tile>();
+
+
+    } */
+
+    public List<Tile> GetAllPseudoValidMovesTeam(PieceTeam team)
+    {
+        List<Tile> moves = new List<Tile>();
+
+        switch (team)
+        {
+            case PieceTeam.White:
+                moves.AddRange(GetAllPiecesPseudoValidMoves(whiteTeam));
+                break;
+
+            case PieceTeam.Black:
+                moves.AddRange(GetAllPiecesPseudoValidMoves(blackTeam));
+                break;
+        }
+
+        return moves;
+    }
+
+    private List<Tile> GetAllPiecesPseudoValidMoves(List<Piece> pieces)
+    {
+        List<Tile> allMoves = new List<Tile>();
+
+        foreach (Piece piece in pieces)
+        {
+            piece.currentTile.Skippable = true;
+
+            piece.CheckKingOnSelection();
+            allMoves.AddRange(piece.GetPseudoValidMoves());
+
+            piece.currentTile.Skippable = false;
+        }
+
+        return allMoves;
+    }
+
+
 
     public List<Tile> GetAllValidMovesTeam(PieceTeam team)
     {

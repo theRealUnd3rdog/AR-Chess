@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Tilemaps;
 
 public class TileManager : MonoBehaviour
 {
@@ -11,6 +10,7 @@ public class TileManager : MonoBehaviour
     public Material killMaterial;
     public Tile currentTileSelected;
     public Piece currentPieceSelected;
+    public List<Tile> tilesToMove = new List<Tile>();
     public Tile[] tiles;
 
     private void Awake()
@@ -26,8 +26,12 @@ public class TileManager : MonoBehaviour
 
     public static void DeselectPiece()
     {
+        if (Instance.currentTileSelected != null)
+            Instance.currentTileSelected.Skippable = false;
+
         Instance.currentTileSelected = null;
         Instance.currentPieceSelected = null;
+        
         Instance.UnhighlightAllTiles();
     }
     

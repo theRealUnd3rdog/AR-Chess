@@ -1,15 +1,21 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public struct KingMoves
-{
-    public List<Tile> invalidMoves;
-    public List<Piece> blockingPieces; 
-}
-
 public class King : Piece
 {
+    [System.Serializable]
+    public struct Castle
+    {
+        public Tile kingTile;
+        public Tile rookTile;
+        public RookSide side;
+        public bool canCastle;
+    }
+
+    public Castle[] castles = new Castle[2];
+
     protected override void Start()
     {
         base.Start();
@@ -18,6 +24,71 @@ public class King : Piece
     protected override void OnDestroy()
     {
         base.OnDestroy();
+    }
+
+    public List<Tile> GetCastleTiles()
+    {
+        List<Tile> castleTiles = new List<Tile>();
+        
+        // initialize a count so you can only get the second tile
+        int value = 2;
+        int count = 1;
+
+        foreach (int index in GetRightIndexes(value, Array.IndexOf(TileManager.Instance.tiles, currentTile)))
+        {
+            Tile rightTile = TileManager.Instance.tiles[index];
+            
+            if (rightTile.IsTileTaken())
+            {
+                break;
+            }
+
+            if (count == 1)
+            {
+                castles[0].rookTile = rightTile;
+            }
+
+            // Get second tile
+            if (count == value)
+            {
+                castleTiles.Add(rightTile);
+
+                castles[0].kingTile = rightTile;
+                castles[0].side = RookSide.Right;
+            }
+
+            count++;
+        }
+
+        count = 1;
+
+        foreach (int index in GetLeftIndexes(value, Array.IndexOf(TileManager.Instance.tiles, currentTile)))
+        {
+            Tile leftTile = TileManager.Instance.tiles[index];
+            
+            if (leftTile.IsTileTaken())
+            {
+                break;
+            }
+
+            if (count == 1)
+            {
+                castles[1].rookTile = leftTile;
+            }
+
+            // Get second tile
+            if (count == value)
+            {
+                castleTiles.Add(leftTile);
+
+                castles[1].kingTile = leftTile;
+                castles[1].side = RookSide.Left;
+            }
+
+            count++;
+        }
+
+        return castleTiles;
     }
 
     public override List<Tile> GetValidMoves()
@@ -30,32 +101,32 @@ public class King : Piece
         validMoves.AddRange(uniTiles);
         validMoves.AddRange(diagonalTiles);
 
+        return validMoves;
+    }
+
+    public override List<Tile> GetPseudoValidMoves()
+    {
+        List<Tile> pseudoValidMoves = GetValidMoves();
+
         List<Tile> invalidMoves = PieceManager.Instance.GetAllValidMovesTeam(Team == PieceTeam.White ? PieceTeam.Black : PieceTeam.White);
 
         foreach (Tile kingTile in invalidMoves)
         {
-            if (validMoves.Contains(kingTile))
-                validMoves.Remove(kingTile);
+            if (pseudoValidMoves.Contains(kingTile))
+                pseudoValidMoves.Remove(kingTile);
 
-            Debug.Log("Invalid moves: " + kingTile.name);
+            //Debug.Log("Invalid moves: " + kingTile.name);
         }
 
-        foreach (Tile tile in validMoves)
+        foreach (Tile tile in pseudoValidMoves)
         {
             //Debug.Log("Valid Moves: " + tile.name);
         }
 
-        // 1)
-        // Look through valid moves from opposite pieces
-        // If opposite piece is on attack king after this piece is moved, this cannot be moved.
+        if (currentMove <= 0)
+            pseudoValidMoves.AddRange(GetCastleTiles());
 
-        // 2)
-        // If opposite piece is already on attack king, only pieces that block that check can be moved.
-
-        // 3)
-        // If opposite piece is blocking all paths of king, you are checked, enemy has won
-
-        return validMoves;
+        return pseudoValidMoves;
     }
 
     public override List<Tile> GetInvalidMoves()
@@ -70,7 +141,7 @@ public class King : Piece
 
         foreach (Tile tile in invalidMoves)
         {
-            Debug.Log("Invalid Moves: " + tile.name);
+            //Debug.Log("Invalid Moves: " + tile.name);
         }
 
         return invalidMoves;

@@ -262,10 +262,19 @@ public class Knight : Piece
         
         foreach (Tile tile in validMoves)
         {
-            Debug.Log("Valid Moves: " + tile.name);
+            //Debug.Log("Valid Moves: " + tile.name);
         }
 
         return validMoves;
+    }
+
+    public override List<Tile> GetPseudoValidMoves()
+    {
+        List<Tile> pseudoValidMoves = GetValidMoves();
+
+        CalculatePseudoValidMoves(pseudoValidMoves);
+
+        return pseudoValidMoves;
     }
 
     public override List<Tile> GetInvalidMoves()
