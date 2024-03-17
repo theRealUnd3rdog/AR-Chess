@@ -7,6 +7,7 @@ public class Tile : MonoBehaviour
 {
     public Piece tilePiece {private set; get;}
     private bool _skippable;
+    private bool _selectable;
     public bool Skippable
     {
         get {return _skippable;}
@@ -43,12 +44,14 @@ public class Tile : MonoBehaviour
 
     private void Awake()
     {
+        _selectable = true;
         _childEventHandler = GetComponent<TileChildEventHandler>();
 
         _childEventHandler.onChildAdded.AddListener(StorePiece);
         _childEventHandler.onChildRemoved.AddListener(RemovePiece);
 
         SkipChange += OnSkipStateChanged;
+        UIManager.OnPromotion += ChangeSelection;
     }
 
     private void Start()
@@ -67,7 +70,10 @@ public class Tile : MonoBehaviour
         _childEventHandler.onChildRemoved.RemoveListener(RemovePiece);
 
         SkipChange -= OnSkipStateChanged;
+        UIManager.OnPromotion -= ChangeSelection;
     }
+
+    private void ChangeSelection(bool flag) => _selectable = !flag;
 
     /* private void OnMouseEnter()
     {
@@ -79,6 +85,9 @@ public class Tile : MonoBehaviour
 
     private void OnMouseDown()
     {
+        if (!_selectable)
+            return;
+
         // Check the previous current selected piece
         Piece currentPiece = TileManager.Instance.currentPieceSelected;
 

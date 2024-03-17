@@ -5,6 +5,8 @@ using UnityEngine;
 
 public class CameraBehaviour : MonoBehaviour
 {
+    public static bool DisableCamera;
+
     private void Start()
     {
         GameManager.MoveMade += CameraMove;
@@ -17,6 +19,7 @@ public class CameraBehaviour : MonoBehaviour
 
     public void CameraMove(PieceTeam team)
     {
-        transform.RotateAround (transform.position, transform.up, (team == PieceTeam.White) ? 180f: -180f);
+        if (!DisableCamera)
+            transform.RotateAround (transform.position, transform.up, (team == PieceTeam.White) ? 180f: -180f);
     }
 }

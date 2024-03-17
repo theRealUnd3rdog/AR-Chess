@@ -28,6 +28,32 @@ public class PieceManager : MonoBehaviour
         InstantiatePieces(_blackPieces);
 
         GameManager.MoveMade += PerformCheckMate;
+
+        GameManager.StorePawnTiles(PieceTeam.White, GetPawnTiles(PieceTeam.White));
+        GameManager.StorePawnTiles(PieceTeam.Black, GetPawnTiles(PieceTeam.Black));
+    }
+
+    public List<Tile> GetPawnTiles(PieceTeam team)
+    {
+        List<Tile> pawnTiles = new List<Tile>();
+        string[] coordinates;
+
+        switch (team)
+        {
+            case PieceTeam.White:
+                coordinates = _whitePieces.columnCoordinates[0].coordinates;
+                pawnTiles = TileManager.GetTilesByNames(coordinates);
+
+                break;
+
+            case PieceTeam.Black:
+                coordinates = _blackPieces.columnCoordinates[0].coordinates;
+                pawnTiles = TileManager.GetTilesByNames(coordinates);
+
+                break;
+        }
+
+        return pawnTiles;
     }
 
     private void OnDestroy()
@@ -104,7 +130,7 @@ public class PieceManager : MonoBehaviour
                     }
                 }
                 // Spawn the pawns after
-                /* else
+                else
                 {
                     // Get the tile
                     pieceToSpawn = pieces[pieces.Length - 1];
@@ -114,8 +140,43 @@ public class PieceManager : MonoBehaviour
                     piece.transform.SetParent(tile.transform);
                     piece.currentTile = tile;
                     SetTeam(piece);
-                } */
+                }
             }
+        }
+    }
+
+    public static void InstantiatePiece<T>(Tile tile, PieceTeam team)
+    {
+        Piece[] pieces = null;
+
+        switch (team)
+        {
+            case PieceTeam.White:
+                pieces = Instance._whitePieces.pieces;
+                break;
+
+            case PieceTeam.Black:
+                pieces = Instance._blackPieces.pieces;
+                break;
+        }
+
+        Piece piece = null;
+
+        for (int i = 0; i < pieces.Length; i++)
+        {
+            if (pieces[i] is T)
+            {
+                piece = pieces[i];
+                break;
+            }
+        }
+
+        if (piece != null)
+        {
+            Piece instantiatedPiece = Instantiate(piece, tile.transform.position, Quaternion.identity);
+            Instance.SetTeam(instantiatedPiece);
+
+            instantiatedPiece.MoveToTileNonNotify(tile);
         }
     }
 
@@ -172,13 +233,50 @@ public class PieceManager : MonoBehaviour
         }
     }
 
-    public Tile GetCurrentRookTile(PieceTeam team, RookSide side)
+    public Rook GetRook(PieceTeam team, RookSide side)
     {
-        Tile tile = default;
+        Rook rook = null;
 
-        
+        switch (team)
+        {
+            case PieceTeam.White:
+                foreach (Piece piece in whiteTeam)
+                {
+                    if (piece is Rook)
+                    {
+                        Rook rookComp = piece.GetComponent<Rook>();
 
-        return tile;
+                        if (rookComp.Side == side)
+                        {
+                            rook = rookComp;
+                            break;
+                        }
+                            
+                    }
+                }
+
+                break;
+
+            case PieceTeam.Black:
+                foreach (Piece piece in blackTeam)
+                {
+                    if (piece is Rook)
+                    {
+                        Rook rookComp = piece.GetComponent<Rook>();
+
+                        if (rookComp.Side == side)
+                        {
+                            rook = rookComp;
+                            break;
+                        }
+                    }
+                        
+                }
+
+                break;
+        }
+
+        return rook;
     }
 
     public Tile GetPieceCurrentTile<T>(PieceTeam team)
@@ -365,5 +463,4 @@ public class PieceManager : MonoBehaviour
 
         Debug.Log($"Killed {piece.name}");
     }
-
 }

@@ -132,6 +132,28 @@ public abstract class Piece : MonoBehaviour
         currentMove++;
 
         GameManager.NotifyMoveMade(Team);
+        TileManager.NotifyMoveOnTilePiece(tile, this);
+    }
+
+    public virtual void MoveToTileNonNotify(Tile tile)
+    {
+        this.transform.position = tile.transform.position;
+        this.transform.SetParent(tile.transform);
+        this.currentTile = tile;
+        this.currentTile.Skippable = false;
+
+        currentMove++;
+
+        // Unsubscribe OnMoveMade
+        GameManager.MoveMade -= OnMoveMade;
+        CameraBehaviour.DisableCamera = true;
+
+        CheckKing(Team);
+
+        GameManager.NotifyMoveMade(Team);
+        
+        CameraBehaviour.DisableCamera = false;
+        GameManager.MoveMade += OnMoveMade;
     }
 
     public virtual List<int> GetForwardIndexes(int times, int currentIndex)

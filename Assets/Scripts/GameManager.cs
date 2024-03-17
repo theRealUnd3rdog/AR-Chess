@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,7 +10,9 @@ public struct TeamChecker
     public PieceTeam team;
     public bool check;
     public bool checkMate;
+    public bool staleMate;
     public List<Piece> threatningPieces;
+    public List<Tile> pawnTiles;
 }
 
 public class GameManager : MonoBehaviour
@@ -25,6 +28,40 @@ public class GameManager : MonoBehaviour
     {
         Instance = this;
         CurrentTeam = PieceTeam.White; // Start with White team
+    }
+
+    public static void StorePawnTiles(PieceTeam team, List<Tile> tiles)
+    {
+        for (int i = 0; i < Instance.TeamCheck.Length; i++)
+        {
+            if (team == Instance.TeamCheck[i].team)
+            {
+                Instance.TeamCheck[i].pawnTiles = tiles;
+
+                break;
+            }
+        }
+    }
+
+    public static bool IsPawnOnPromotionTile(Piece piece)
+    {
+        PieceTeam oppositeTeam = piece.Team == PieceTeam.White ? PieceTeam.Black : PieceTeam.White;
+
+        List<Tile> pawnTiles = new List<Tile>();
+        Tile pieceTile = piece.currentTile;
+
+        foreach (TeamChecker teamCheck in Instance.TeamCheck)
+        {
+            if (teamCheck.team == oppositeTeam)
+                pawnTiles = teamCheck.pawnTiles;
+        }
+
+        if (pawnTiles.Any(tile => tile == pieceTile))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     // Method to notify subscribers that a move has been made
@@ -44,6 +81,19 @@ public class GameManager : MonoBehaviour
             {
                 Instance.TeamCheck[i].checkMate = true;
        
+                break;
+            }
+        }
+    }
+
+    public static void StateMateTeam(PieceTeam team)
+    {
+        for (int i = 0; i < Instance.TeamCheck.Length; i++)
+        {
+            if (team == Instance.TeamCheck[i].team)
+            {
+                Instance.TeamCheck[i].staleMate = true;
+
                 break;
             }
         }
@@ -90,6 +140,22 @@ public class GameManager : MonoBehaviour
                 break;
             }
         }
+    }
+
+    public static bool IsTeamChecked(PieceTeam team)
+    {
+        bool flag = false;
+
+        for (int i = 0; i < Instance.TeamCheck.Length; i++)
+        {
+            if (Instance.TeamCheck[i].check)
+            {
+                flag = Instance.TeamCheck[i].check;
+                break;
+            }
+        }
+
+        return flag;
     }
 
     public static bool GetCheckedTeam(out PieceTeam team)
