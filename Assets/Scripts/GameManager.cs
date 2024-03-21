@@ -3,6 +3,8 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using FishNet.Object;
+using FishNet.Object.Synchronizing;
 
 [System.Serializable]
 public struct TeamChecker
@@ -15,10 +17,24 @@ public struct TeamChecker
     public List<Tile> pawnTiles;
 }
 
-public class GameManager : MonoBehaviour
+public enum GameState
+{
+    Waiting,
+    Started,
+}
+
+
+public class GameManager : NetworkBehaviour
 {
     public static GameManager Instance;
+
+    [SyncVar]
+    public GameState state;
+
+    [SyncVar]
     public PieceTeam CurrentTeam;
+    public PieceTeam PlayerTeam;
+
     public TeamChecker[] TeamCheck;
 
     // Define an event to signal when a move has been made
@@ -28,6 +44,30 @@ public class GameManager : MonoBehaviour
     {
         Instance = this;
         CurrentTeam = PieceTeam.White; // Start with White team
+    }
+
+    public override void OnStartClient()
+    {
+        base.OnStartClient();
+
+        ServerSetGameState(GameState.Waiting);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void ServerSetCurrentTeam(PieceTeam team)
+    {
+        CurrentTeam = team;
+    }
+
+    public static void SetGameState(GameState state)
+    {
+        Instance.ServerSetGameState(state);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void ServerSetGameState(GameState state)
+    {
+        Instance.state = state;
     }
 
     public static void StorePawnTiles(PieceTeam team, List<Tile> tiles)

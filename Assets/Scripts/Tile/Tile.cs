@@ -1,9 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using FishNet.Object;
 using UnityEngine;
 
-public class Tile : MonoBehaviour
+public class Tile : NetworkBehaviour
 {
     public Piece tilePiece {private set; get;}
     private bool _skippable;
@@ -94,7 +95,7 @@ public class Tile : MonoBehaviour
         // Check if a tile has a piece and check if they are of current team
         if (tilePiece != null)
         {
-            if (GameManager.Instance.CurrentTeam == tilePiece.Team)
+            if (GameManager.Instance.CurrentTeam == tilePiece.Team && GameManager.Instance.PlayerTeam == tilePiece.Team)
             {
                 // Previous tile selected should no longer be skippable
                 if (TileManager.Instance.currentTileSelected != null)
@@ -142,9 +143,8 @@ public class Tile : MonoBehaviour
                         PieceManager.KillPiece(tilePiece);
                     }
                 }
-                    
-                currentPiece.MoveToTile(this);
-                return;
+                
+                currentPiece.ServerMoveToTile(this);
             }
         }
     }

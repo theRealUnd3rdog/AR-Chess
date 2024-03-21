@@ -640,6 +640,7 @@ PlayerSettings:
   webGLDecompressionFallback: 0
   webGLPowerPreference: 2
   scriptingDefineSymbols:
+    Android: FISHNET;FISHNET_V3
     Standalone: FISHNET;FISHNET_V3
   additionalCompilerArguments: {}
   platformArchitecture:

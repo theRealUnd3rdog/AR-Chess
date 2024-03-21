@@ -1,14 +1,21 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using FishNet;
+using FishNet.Managing;
+using FishNet.Managing.Server;
+using FishNet.Object;
+using FishNet.Object.Synchronizing;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class PieceManager : MonoBehaviour
+public class PieceManager : NetworkBehaviour
 {
     public static PieceManager Instance;
+
     public List<Piece> whiteTeam;
     public List<Piece> blackTeam;
+
     [SerializeField] private PieceSO _whitePieces;
     [SerializeField] private PieceSO _blackPieces;
 
@@ -24,14 +31,32 @@ public class PieceManager : MonoBehaviour
     {
         _tileManager = TileManager.Instance;
 
-        InstantiatePieces(_whitePieces);
-        InstantiatePieces(_blackPieces);
-
         GameManager.MoveMade += PerformCheckMate;
-
-        GameManager.StorePawnTiles(PieceTeam.White, GetPawnTiles(PieceTeam.White));
-        GameManager.StorePawnTiles(PieceTeam.Black, GetPawnTiles(PieceTeam.Black));
     }
+    
+    private void OnDestroy()
+    {
+        GameManager.MoveMade -= PerformCheckMate;
+    }
+
+    public void InitializeTeam(PieceTeam team)
+    {
+        switch (team)
+        {
+            case PieceTeam.White:
+                InstantiatePieces(_whitePieces);
+                GameManager.StorePawnTiles(PieceTeam.White, GetPawnTiles(PieceTeam.White));
+
+                break;
+
+            case PieceTeam.Black:
+                InstantiatePieces(_blackPieces);
+                GameManager.StorePawnTiles(PieceTeam.Black, GetPawnTiles(PieceTeam.Black));
+                
+                break;
+        }
+    }
+
 
     public List<Tile> GetPawnTiles(PieceTeam team)
     {
@@ -56,11 +81,8 @@ public class PieceManager : MonoBehaviour
         return pawnTiles;
     }
 
-    private void OnDestroy()
-    {
-        GameManager.MoveMade -= PerformCheckMate;
-    }
 
+    [ServerRpc(RequireOwnership = false)]
     private void InstantiatePieces(PieceSO pieceSO)
     {
         // Grab pieces
@@ -74,7 +96,6 @@ public class PieceManager : MonoBehaviour
             {
                 Tile tile = _tileManager.tiles[0];
                 Piece pieceToSpawn = pieces[0];
-                
 
                 // Get the tile needed
                 for (int k = 0; k < _tileManager.tiles.Length; k++)
@@ -99,35 +120,10 @@ public class PieceManager : MonoBehaviour
                     }
                     
                     Piece piece = Instantiate(pieceToSpawn, tile.transform.position, Quaternion.identity);
-
                     piece.transform.SetParent(tile.transform);
-                    piece.currentTile = tile;
-                    SetTeam(piece);
 
-                    // Handle rook side for castling later
-                    Rook rook = piece.GetComponent<Rook>();
-
-                    if (rook != null)
-                    {
-                        switch (tile.name)
-                        {
-                            case "A1":
-                                rook.Side = RookSide.Left;
-                                break;
-
-                            case "H1":
-                                rook.Side = RookSide.Right;
-                                break;
-
-                            case "H8":
-                                rook.Side = RookSide.Left;
-                                break;
-
-                            case "A8":
-                                rook.Side = RookSide.Right;
-                                break;
-                        }
-                    }
+                    ServerManager.Spawn(piece.gameObject);
+                    InitializePiece(piece, tile);
                 }
                 // Spawn the pawns after
                 else
@@ -136,13 +132,46 @@ public class PieceManager : MonoBehaviour
                     pieceToSpawn = pieces[pieces.Length - 1];
 
                     Piece piece = Instantiate(pieceToSpawn, tile.transform.position, Quaternion.identity);
-
                     piece.transform.SetParent(tile.transform);
-                    piece.currentTile = tile;
-                    SetTeam(piece);
+                    
+                    ServerManager.Spawn(piece.gameObject);
+
+                    InitializePiece(piece, tile);
                 }
             }
         }
+    }
+
+    [ObserversRpc]
+    private void InitializePiece(Piece piece, Tile tile)
+    {
+        // Handle rook side for castling later
+        Rook rook = piece.GetComponent<Rook>();
+
+        if (rook != null)
+        {
+            switch (tile.name)
+            {
+                case "A1":
+                    rook.Side = RookSide.Left;
+                    break;
+
+                case "H1":
+                    rook.Side = RookSide.Right;
+                    break;
+
+                case "H8":
+                    rook.Side = RookSide.Left;
+                    break;
+
+                case "A8":
+                    rook.Side = RookSide.Right;
+                    break;
+            }
+        }
+
+        piece.currentTile = tile;
+        SetTeam(piece);
     }
 
     public static void InstantiatePiece<T>(Tile tile, PieceTeam team)
@@ -173,11 +202,25 @@ public class PieceManager : MonoBehaviour
 
         if (piece != null)
         {
-            Piece instantiatedPiece = Instantiate(piece, tile.transform.position, Quaternion.identity);
-            Instance.SetTeam(instantiatedPiece);
-
-            instantiatedPiece.MoveToTileNonNotify(tile);
+            Instance.ServerInitializeSinglePiece(piece, tile);
         }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void ServerInitializeSinglePiece(Piece piece, Tile tile)
+    {
+        Piece instantiatedPiece = Instantiate(piece, tile.transform.position, Quaternion.identity);
+        ServerManager.Spawn(instantiatedPiece.gameObject);
+
+        instantiatedPiece.MoveToTileNonNotify(tile);
+
+        InitializeSinglePiece(piece);
+    }
+
+    [ObserversRpc]
+    private void InitializeSinglePiece(Piece piece)
+    {
+        Instance.SetTeam(piece);
     }
 
     private void SetTeam(Piece piece)
@@ -453,14 +496,25 @@ public class PieceManager : MonoBehaviour
 
     public static void KillPiece(Piece piece)
     {
+        Instance.ServerKillPiece(piece);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void ServerKillPiece(Piece piece)
+    {
+        RemovePiece(piece);
+        ServerManager.Despawn(piece.gameObject);
+
+        Debug.Log($"Killed {piece.name}");
+    }
+
+    [ObserversRpc]
+    private void RemovePiece(Piece piece)
+    {
         if (Instance.whiteTeam.Contains(piece))
             Instance.whiteTeam.Remove(piece);
 
         else if (Instance.blackTeam.Contains(piece))
             Instance.blackTeam.Remove(piece);
-
-        Destroy(piece.gameObject);
-
-        Debug.Log($"Killed {piece.name}");
     }
 }

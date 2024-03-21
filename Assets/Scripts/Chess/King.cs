@@ -90,7 +90,7 @@ public class King : Piece
                 if (leftCastle.canCastle)
                 {
                     Rook rook = PieceManager.Instance.GetRook(Team, RookSide.Left);
-                    rook.MoveToTileNonNotify(leftCastle.rookTile);
+                    rook.ServerMoveToTileNonNotify(leftCastle.rookTile);
 
                     Debug.Log("Rook moved");
                 }
@@ -100,7 +100,7 @@ public class King : Piece
                 if (rightCastle.canCastle)
                 {
                     Rook rook = PieceManager.Instance.GetRook(Team, RookSide.Right);
-                    rook.MoveToTileNonNotify(rightCastle.rookTile);
+                    rook.ServerMoveToTileNonNotify(rightCastle.rookTile);
                 }
             }
         }

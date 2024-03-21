@@ -58,7 +58,7 @@ public class Pawn : Piece
             UIManager.Instance.Promotion = true;
         }
     }
-
+    
     private void KillEnPassent(Tile tile, Piece piece)
     {
         if (piece == this)

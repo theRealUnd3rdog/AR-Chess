@@ -4,6 +4,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+using FishNet.Object;
+
 public enum PieceType
 {
     Bishop,
@@ -32,7 +34,7 @@ public struct LegalPieceMoves
     }
 }
 
-public abstract class Piece : MonoBehaviour
+public abstract class Piece : NetworkBehaviour
 {
     public PieceType Type;
     public PieceTeam Team;
@@ -62,7 +64,7 @@ public abstract class Piece : MonoBehaviour
     private void OnMoveMade(PieceTeam team)
     {
         // Toggle the current team
-        GameManager.Instance.CurrentTeam = (team == PieceTeam.White) ? PieceTeam.Black : PieceTeam.White;
+        GameManager.Instance.ServerSetCurrentTeam((team == PieceTeam.White) ? PieceTeam.Black : PieceTeam.White);
         TileManager.DeselectPiece();
 
         CheckKing(team);
@@ -121,6 +123,13 @@ public abstract class Piece : MonoBehaviour
         }
     }
 
+    [ServerRpc(RequireOwnership = false)]
+    public virtual void ServerMoveToTile(Tile tile)
+    {
+        MoveToTile(tile);
+    }
+    
+    [ObserversRpc]
     public virtual void MoveToTile(Tile tile)
     {
         // Define base behaviour
@@ -135,6 +144,13 @@ public abstract class Piece : MonoBehaviour
         TileManager.NotifyMoveOnTilePiece(tile, this);
     }
 
+    [ServerRpc(RequireOwnership = false)]
+    public virtual void ServerMoveToTileNonNotify(Tile tile)
+    {
+        MoveToTileNonNotify(tile);
+    }
+
+    [ObserversRpc]
     public virtual void MoveToTileNonNotify(Tile tile)
     {
         this.transform.position = tile.transform.position;
