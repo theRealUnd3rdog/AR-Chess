@@ -214,7 +214,7 @@ public class PieceManager : NetworkBehaviour
 
         instantiatedPiece.MoveToTileNonNotify(tile);
 
-        InitializeSinglePiece(piece);
+        InitializeSinglePiece(instantiatedPiece);
     }
 
     [ObserversRpc]
@@ -271,7 +271,8 @@ public class PieceManager : NetworkBehaviour
         if (tiles.Count <= 0)
         {
             GameManager.CheckMateTeam(oppositeTeam);
-            
+            UIManager.ShowWinScreen(true, team);
+
             Debug.Log($"{team} has won");
         }
     }
@@ -496,6 +497,7 @@ public class PieceManager : NetworkBehaviour
 
     public static void KillPiece(Piece piece)
     {
+        Debug.Log("Killed piece client");
         Instance.ServerKillPiece(piece);
     }
 

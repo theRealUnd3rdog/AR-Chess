@@ -53,6 +53,7 @@ public class Tile : NetworkBehaviour
 
         SkipChange += OnSkipStateChanged;
         UIManager.OnPromotion += ChangeSelection;
+        GameManager.StateChanged += OnChangeGameState;
     }
 
     private void Start()
@@ -72,6 +73,15 @@ public class Tile : NetworkBehaviour
 
         SkipChange -= OnSkipStateChanged;
         UIManager.OnPromotion -= ChangeSelection;
+        GameManager.StateChanged -= OnChangeGameState;
+    }
+
+    private void OnChangeGameState(GameState state)
+    {
+        if (state == GameState.Ended)
+        {
+            ChangeSelection(true);
+        }
     }
 
     private void ChangeSelection(bool flag) => _selectable = !flag;

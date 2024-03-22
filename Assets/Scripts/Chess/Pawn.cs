@@ -15,8 +15,9 @@ public class Pawn : Piece
     {
         base.Start();
         
-        TileManager.MoveOnTile += ChangeEnPassent;
         TileManager.MoveOnTile += KillEnPassent;
+        TileManager.MoveOnTile += ChangeEnPassent;
+        
 
         TileManager.MoveOnTile += NotifyIfOnPromotionTile;
     }
@@ -25,8 +26,8 @@ public class Pawn : Piece
     {
         base.OnDestroy();
         
-        TileManager.MoveOnTile -= ChangeEnPassent;
         TileManager.MoveOnTile -= KillEnPassent;
+        TileManager.MoveOnTile -= ChangeEnPassent;
 
         TileManager.MoveOnTile -= NotifyIfOnPromotionTile;
     }
@@ -65,8 +66,8 @@ public class Pawn : Piece
         {
             if (_enemyEnPassentPawn != null && tile == _enPassentKillTile)
             {
-                if (_enemyEnPassentPawn.enPassent)
-                    PieceManager.KillPiece(_enemyEnPassentPawn);
+                //if (_enemyEnPassentPawn.enPassent)
+                PieceManager.KillPiece(_enemyEnPassentPawn);
             }
         }
     }

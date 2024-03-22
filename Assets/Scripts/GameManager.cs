@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using FishNet;
 using FishNet.Object;
 using FishNet.Object.Synchronizing;
 
@@ -21,6 +22,7 @@ public enum GameState
 {
     Waiting,
     Started,
+    Ended,
 }
 
 
@@ -28,7 +30,7 @@ public class GameManager : NetworkBehaviour
 {
     public static GameManager Instance;
 
-    [SyncVar]
+    [SyncVar(Channel = FishNet.Transporting.Channel.Unreliable, OnChange = nameof(HandleStateChanged))]
     public GameState state;
 
     [SyncVar]
@@ -39,11 +41,22 @@ public class GameManager : NetworkBehaviour
 
     // Define an event to signal when a move has been made
     public static event Action<PieceTeam> MoveMade;
+    public static event Action<GameState> StateChanged;
 
     private void Awake()
     {
         Instance = this;
         CurrentTeam = PieceTeam.White; // Start with White team
+    }
+
+    private void HandleStateChanged(GameState oldState, GameState newState, bool asServer)
+    {
+        if (asServer)
+            return;
+
+        // Handle the state change here
+        Debug.Log("State changed to: " + newState);
+        StateChanged?.Invoke(newState);
     }
 
     public override void OnStartClient()
@@ -120,6 +133,7 @@ public class GameManager : NetworkBehaviour
             if (team == Instance.TeamCheck[i].team)
             {
                 Instance.TeamCheck[i].checkMate = true;
+                Instance.ServerSetGameState(GameState.Ended);
        
                 break;
             }

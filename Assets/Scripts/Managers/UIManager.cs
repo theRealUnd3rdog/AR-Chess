@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 using UnityEngine;
+using TMPro;
 
 public class UIManager : MonoBehaviour
 {
@@ -10,6 +11,8 @@ public class UIManager : MonoBehaviour
     public Pawn pawnToPromote {set; get;}
 
     [SerializeField] private Canvas _promotionCanvas;
+    [SerializeField] private Canvas _winningCanvas;
+    [SerializeField] private TextMeshProUGUI _winningField;
 
     [SerializeField] private bool _promotion;
 
@@ -50,6 +53,12 @@ public class UIManager : MonoBehaviour
         PieceManager.InstantiatePiece<T>(tileToSpawn, team);
 
         Promotion = false;
+    }
+
+    public static void ShowWinScreen(bool flag, PieceTeam team)
+    {
+        Instance._winningCanvas.gameObject.SetActive(flag);
+        Instance._winningField.text = $"{team} nigga has won";
     }
 
     private void Awake()
