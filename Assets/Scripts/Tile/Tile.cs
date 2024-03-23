@@ -30,6 +30,7 @@ public class Tile : NetworkBehaviour
     private Material _killMaterial;
     private Material _originalMaterial;
     private Renderer _rend;
+    private Collider _coll;
 
     private TileChildEventHandler _childEventHandler;
 
@@ -46,6 +47,7 @@ public class Tile : NetworkBehaviour
     private void Awake()
     {
         _selectable = true;
+        _coll = GetComponent<Collider>();
         _childEventHandler = GetComponent<TileChildEventHandler>();
 
         _childEventHandler.onChildAdded.AddListener(StorePiece);
@@ -54,6 +56,8 @@ public class Tile : NetworkBehaviour
         SkipChange += OnSkipStateChanged;
         UIManager.OnPromotion += ChangeSelection;
         GameManager.StateChanged += OnChangeGameState;
+
+        InputManager.OnEndTouch += OnTilePress;
     }
 
     private void Start()
@@ -74,6 +78,7 @@ public class Tile : NetworkBehaviour
         SkipChange -= OnSkipStateChanged;
         UIManager.OnPromotion -= ChangeSelection;
         GameManager.StateChanged -= OnChangeGameState;
+        InputManager.OnEndTouch -= OnTilePress;
     }
 
     private void OnChangeGameState(GameState state)
@@ -94,69 +99,76 @@ public class Tile : NetworkBehaviour
         }
     } */
 
-    private void OnMouseDown()
+    private void OnTilePress(Vector2 screenPos, float time)
     {
-        if (!_selectable)
+        Ray ray = Camera.main.ScreenPointToRay(new Vector3(screenPos.x, screenPos.y, 0));
+        RaycastHit hit;
+
+        if (_coll.Raycast(ray, out hit, 1000.0f))
+        {
+            if (!_selectable)
             return;
 
-        // Check the previous current selected piece
-        Piece currentPiece = TileManager.Instance.currentPieceSelected;
+            // Check the previous current selected piece
+            Piece currentPiece = TileManager.Instance.currentPieceSelected;
 
-        // Check if a tile has a piece and check if they are of current team
-        if (tilePiece != null)
-        {
-            if (GameManager.Instance.CurrentTeam == tilePiece.Team && GameManager.Instance.PlayerTeam == tilePiece.Team)
+            // Check if a tile has a piece and check if they are of current team
+            if (tilePiece != null)
             {
-                // Previous tile selected should no longer be skippable
-                if (TileManager.Instance.currentTileSelected != null)
-                    TileManager.Instance.currentTileSelected.Skippable = false;
-
-                Skippable = true;
-
-                tilePiece.CheckKingOnSelection(); 
-                
-                // Select the current piece
-                currentPiece = tilePiece;
-                TileManager.Instance.currentPieceSelected = tilePiece;
-                // Select the current tile
-                TileManager.Instance.currentTileSelected = this;
-
-                TileManager.Instance.tilesToMove = tilePiece.GetPseudoValidMoves();
-
-                DisplayMoves(tilePiece, TileManager.Instance.tilesToMove);
-            }
-        }
-
-        if (currentPiece != null)
-        {
-            // Grab the current set of valid tiles to move to
-            List<Tile> tilesToMove = new List<Tile>();
-            List<Tile> pseudoValidMoves = TileManager.Instance.tilesToMove;
-
-            try
-            {
-                tilesToMove = pseudoValidMoves;
-            }
-            catch (System.NotImplementedException e)
-            {
-                Debug.LogWarning("GetValidMoves method not implemented for this piece: " + e.Message);
-            }
-
-            // Check if it contains this tile
-            if (tilesToMove.Contains(this))
-            {
-                // Check if it's an enemy piece, if it is, kill it
-                if (tilePiece != null)
+                if (GameManager.Instance.CurrentTeam == tilePiece.Team && GameManager.Instance.PlayerTeam == tilePiece.Team)
                 {
-                    if (GameManager.Instance.CurrentTeam != tilePiece.Team)
-                    {
-                        PieceManager.KillPiece(tilePiece);
-                    }
+                    // Previous tile selected should no longer be skippable
+                    if (TileManager.Instance.currentTileSelected != null)
+                        TileManager.Instance.currentTileSelected.Skippable = false;
+
+                    Skippable = true;
+
+                    tilePiece.CheckKingOnSelection(); 
+                    
+                    // Select the current piece
+                    currentPiece = tilePiece;
+                    TileManager.Instance.currentPieceSelected = tilePiece;
+                    // Select the current tile
+                    TileManager.Instance.currentTileSelected = this;
+
+                    TileManager.Instance.tilesToMove = tilePiece.GetPseudoValidMoves();
+
+                    DisplayMoves(tilePiece, TileManager.Instance.tilesToMove);
                 }
-                
-                currentPiece.ServerMoveToTile(this);
+            }
+
+            if (currentPiece != null)
+            {
+                // Grab the current set of valid tiles to move to
+                List<Tile> tilesToMove = new List<Tile>();
+                List<Tile> pseudoValidMoves = TileManager.Instance.tilesToMove;
+
+                try
+                {
+                    tilesToMove = pseudoValidMoves;
+                }
+                catch (System.NotImplementedException e)
+                {
+                    Debug.LogWarning("GetValidMoves method not implemented for this piece: " + e.Message);
+                }
+
+                // Check if it contains this tile
+                if (tilesToMove.Contains(this))
+                {
+                    // Check if it's an enemy piece, if it is, kill it
+                    if (tilePiece != null)
+                    {
+                        if (GameManager.Instance.CurrentTeam != tilePiece.Team)
+                        {
+                            PieceManager.KillPiece(tilePiece);
+                        }
+                    }
+                    
+                    currentPiece.ServerMoveToTile(this);
+                }
             }
         }
+        
     }
 
     private void DisplayMoves(Piece piece, List<Tile> moves)
