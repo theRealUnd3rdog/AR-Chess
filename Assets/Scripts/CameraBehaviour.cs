@@ -9,17 +9,28 @@ public class CameraBehaviour : MonoBehaviour
 
     private void Start()
     {
-        GameManager.MoveMade += CameraMove;
+        //GameManager.MoveMade += CameraMove;
+        GameManager.StateChanged += ChangeCameraOnStateChanged;
     }
 
     private void OnDestroy()
     {
-        GameManager.MoveMade -= CameraMove;
+        //GameManager.MoveMade -= CameraMove;
+        GameManager.StateChanged -= ChangeCameraOnStateChanged;
     }
 
-    public void CameraMove(PieceTeam team)
+    private void ChangeCameraOnStateChanged(GameState state)
+    {
+        if (state == GameState.Started)
+        {
+            PieceTeam team = GameManager.Instance.PlayerTeam;
+            CameraMove(team);
+        }
+    }
+
+    private void CameraMove(PieceTeam team)
     {
         if (!DisableCamera)
-            transform.RotateAround (transform.position, transform.up, (team == PieceTeam.White) ? 180f: -180f);
+            transform.RotateAround (transform.position, transform.up, (team == PieceTeam.White) ? -90f: 90f);
     }
 }

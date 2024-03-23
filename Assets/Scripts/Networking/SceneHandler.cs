@@ -52,10 +52,15 @@ public class SceneHandler : MonoBehaviour
 
     public void LoadPlayer()
     {
-        tryConnect = StartCoroutine(TryConnect());
+        tryConnect = StartCoroutine(TryConnect(false));
     }
 
-    private IEnumerator TryConnect()
+    public void LoadServer()
+    {
+        tryConnect = StartCoroutine(TryConnect(true));
+    }
+
+    private IEnumerator TryConnect(bool asServer)
     {
         SceneManager.LoadScene(_onlineScene);
 
@@ -64,8 +69,9 @@ public class SceneHandler : MonoBehaviour
         if (transport.GetClientAddress() == "localhost" && transport.GetConnectionState(true) != LocalConnectionState.Started)
             transport.StartConnection(true); // try start server
 
-        transport.StartConnection(false); // try start client
-
+        if (!asServer)
+            transport.StartConnection(false); // try start client
+        
         timeoutTimer = 0f;
 
         do
@@ -86,11 +92,14 @@ public class SceneHandler : MonoBehaviour
         }
         while (timeoutTimer < transport.GetTimeout(false));
 
-        // load offline scene
-        if (transport.GetConnectionState(false) == LocalConnectionState.Stopped)
+        if (!asServer)
         {
-            Debug.Log("Server is invalid, try another address");
-            SceneManager.LoadScene(_offlineScene);
+            // load offline scene
+            if (transport.GetConnectionState(false) == LocalConnectionState.Stopped)
+            {
+                Debug.Log("Server is invalid, try another address");
+                SceneManager.LoadScene(_offlineScene);
+            }
         }
     }
 }

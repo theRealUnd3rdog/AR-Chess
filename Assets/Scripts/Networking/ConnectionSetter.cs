@@ -17,4 +17,13 @@ public class ConnectionSetter : MonoBehaviour
             SceneHandler.Instance.LoadPlayer();
         }
     }
+
+    public void ConnectServer()
+    {
+        if (SceneHandler.Instance != null)
+        {
+            InstanceFinder.TransportManager.Transport.SetClientAddress(_address.text);
+            SceneHandler.Instance.LoadServer();
+        }
+    }
 }

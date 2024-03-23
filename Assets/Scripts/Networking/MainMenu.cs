@@ -4,15 +4,19 @@ using UnityEngine;
 
 public class MainMenu : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    private void Update()
     {
-        
+        if (Application.platform == RuntimePlatform.Android) 
+        {
+            if (Input.GetKeyDown(KeyCode.Escape)) {
+                
+                Application.Quit();
+            }
+        }
     }
 
-    // Update is called once per frame
-    void Update()
+    public void Quit()
     {
-        
+        Application.Quit();
     }
 }
