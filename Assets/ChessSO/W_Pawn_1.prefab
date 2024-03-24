@@ -28,8 +28,8 @@ Transform:
   m_GameObject: {fileID: 3536699917104715173}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 6.2696867, y: 1.4605002, z: 1.1930575}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.012499999, y: 0.012499999, z: 0.012499999}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -99,3 +99,7 @@ MonoBehaviour:
   Type: 5
   Team: 0
   currentTile: {fileID: 0}
+  currentMove: 0
+  isCheckingKing: 0
+  enPassent: 0
+  enPassentTile: {fileID: 0}

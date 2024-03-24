@@ -9,12 +9,12 @@ public class CameraBehaviour : MonoBehaviour
 
     private void Start()
     {
-        GameManager.MoveMade += CameraMove;
+        //GameManager.MoveMade += CameraMove;
     }
 
     private void OnDestroy()
     {
-        GameManager.MoveMade -= CameraMove;
+        //GameManager.MoveMade -= CameraMove;
     }
 
     public void CameraMove(PieceTeam team)
