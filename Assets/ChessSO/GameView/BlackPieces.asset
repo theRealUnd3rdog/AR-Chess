@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cea9e42fdde000d41989318974afaa44, type: 3}
+  m_Name: BlackPieces
+  m_EditorClassIdentifier: 
+  columnCoordinates:
+  - coordinates:
+    - A8
+    - B8
+    - C8
+    - D8
+    - E8
+    - F8
+    - G8
+    - H8
+  - coordinates:
+    - H7
+    - G7
+    - F7
+    - E7
+    - D7
+    - C7
+    - B7
+    - A7
+  pieces:
+  - {fileID: 1715801823358442321, guid: 19faa6dd308e8e345a291e0a5b9e4f93, type: 3}
+  - {fileID: 3114448155898992078, guid: d97c0105bf56bba428d2672afeba8652, type: 3}
+  - {fileID: 8013689586735024092, guid: c16a988e11c93ce409bd0e863bdc5a03, type: 3}
+  - {fileID: 3592657745888663121, guid: cbe51c909a1bee74ab94adc92f4a2f2d, type: 3}
+  - {fileID: 6813360543026451020, guid: 0250c29e99fb1b846b0a155683944a47, type: 3}
+  - {fileID: 4305716307199968602, guid: 74efb958076adf1408fed7bf4590b747, type: 3}

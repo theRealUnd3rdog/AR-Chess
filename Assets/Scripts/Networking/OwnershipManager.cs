@@ -84,7 +84,7 @@ public class OwnershipManager : NetworkBehaviour
 
         PlayerInfo info;
         info.team = team;
-        info.name = $"{team} boi";
+        info.name = $"{team} team";
 
         // Set the local team per player
         GameManager.Instance.PlayerTeam = team;

@@ -26,6 +26,10 @@ public class SceneHandler : MonoBehaviour
     public void SetOnlineScene(string sceneName) => _onlineScene = sceneName;
 
     [SerializeField, Scene]
+    private string _aRScene;
+    public void SetARScene(string sceneName) => _aRScene = sceneName;
+
+    [SerializeField, Scene]
     private string _offlineScene;
     public void SetOfflineScene(string sceneName) => _offlineScene = sceneName;
 
@@ -52,17 +56,25 @@ public class SceneHandler : MonoBehaviour
 
     public void LoadPlayer()
     {
-        tryConnect = StartCoroutine(TryConnect(false));
+        tryConnect = StartCoroutine(TryConnect(false, false));
+    }
+
+    public void LoadPlayerAR()
+    {
+        tryConnect = StartCoroutine(TryConnect(false, true));
     }
 
     public void LoadServer()
     {
-        tryConnect = StartCoroutine(TryConnect(true));
+        tryConnect = StartCoroutine(TryConnect(true, false));
     }
 
-    private IEnumerator TryConnect(bool asServer)
+    private IEnumerator TryConnect(bool asServer, bool asAR)
     {
-        SceneManager.LoadScene(_onlineScene);
+        if (!asAR)
+            SceneManager.LoadScene(_onlineScene);
+        else
+            SceneManager.LoadScene(_aRScene);
 
         Tugboat transport = (Tugboat)InstanceFinder.TransportManager.Transport;
 

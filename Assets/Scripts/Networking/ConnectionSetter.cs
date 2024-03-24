@@ -18,6 +18,15 @@ public class ConnectionSetter : MonoBehaviour
         }
     }
 
+    public void ConnectAR()
+    {
+        if (SceneHandler.Instance != null)
+        {
+            InstanceFinder.TransportManager.Transport.SetClientAddress(_address.text);
+            SceneHandler.Instance.LoadPlayerAR();
+        }
+    }
+
     public void ConnectServer()
     {
         if (SceneHandler.Instance != null)

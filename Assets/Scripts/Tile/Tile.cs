@@ -55,6 +55,9 @@ public class Tile : NetworkBehaviour
 
         SkipChange += OnSkipStateChanged;
         UIManager.OnPromotion += ChangeSelection;
+        ARUIManager.PlacementChange += ChangeSelection;
+        ARUIManager.AdjustmentChange += ChangeSelection;
+
         GameManager.StateChanged += OnChangeGameState;
 
         InputManager.OnEndTouch += OnTilePress;
@@ -65,6 +68,7 @@ public class Tile : NetworkBehaviour
         _highlightMaterial = TileManager.Instance.highlightMaterial;
         _invalidMaterial = TileManager.Instance.invalidMaterial;
         _killMaterial = TileManager.Instance.killMaterial;
+        
 
         _rend = GetComponent<Renderer>();
         _originalMaterial = _rend.material;
@@ -79,6 +83,9 @@ public class Tile : NetworkBehaviour
         UIManager.OnPromotion -= ChangeSelection;
         GameManager.StateChanged -= OnChangeGameState;
         InputManager.OnEndTouch -= OnTilePress;
+
+        ARUIManager.PlacementChange -= ChangeSelection;
+        ARUIManager.AdjustmentChange -= ChangeSelection;
     }
 
     private void OnChangeGameState(GameState state)
@@ -107,7 +114,7 @@ public class Tile : NetworkBehaviour
         if (_coll.Raycast(ray, out hit, 1000.0f))
         {
             if (!_selectable)
-            return;
+                return;
 
             // Check the previous current selected piece
             Piece currentPiece = TileManager.Instance.currentPieceSelected;

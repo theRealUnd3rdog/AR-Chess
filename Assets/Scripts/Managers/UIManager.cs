@@ -58,7 +58,7 @@ public class UIManager : MonoBehaviour
     public static void ShowWinScreen(bool flag, PieceTeam team)
     {
         Instance._winningCanvas.gameObject.SetActive(flag);
-        Instance._winningField.text = $"{team} nigga has won";
+        Instance._winningField.text = $"{team} has won";
     }
 
     private void Awake()
