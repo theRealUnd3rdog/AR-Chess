@@ -1,5 +1,3 @@
-# AR-Chess
-This is going to be for AR-chess related stuff.
 ![image(5)](https://github.com/theRealUnd3rdog/AR-Chess/assets/79404980/992c8c56-d30f-40b7-9dd8-0c81b0d2e2fd)
 
 **AR CHESS** is a multiplayer chess game that supports Augmented Reality and utilizes Fishnetworking.
