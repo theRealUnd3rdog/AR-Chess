@@ -1,0 +1,45 @@
+name: Unity CI/CD
+
+on:
+  push:
+    branches:
+      - main  # Adjust this to your main branch name
+  pull_request:
+    branches:
+      - main  # Adjust this to your main branch name
+
+jobs:
+  build:
+    runs-on: windows-latest  # Choose appropriate runner based on your Unity version and target platform
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Unity
+        uses: game-ci/setup-unity@v1
+        with:
+          unityVersion: 2023.1.7f1  # Replace with your Unity version
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: Library
+          key: ${{ runner.os }}-unity-${{ hashFiles('**/PackagesLock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-unity-
+
+      - name: Build Unity project
+        run: |
+          mkdir Build
+          unity-build-command -projectPath . -buildTarget WebGL -buildPath Build/webgl-build
+        # Replace 'unity-build-command' with your actual Unity build command
+
+  deploy:
+    runs-on: windows-latest
+    needs: build
+    steps:
+      - name: Deploy to server
+        run: |
+          scp -r Build/webgl-build user@server:/path/to/deployment
+        # Replace with your deployment command
